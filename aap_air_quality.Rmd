@@ -1,0 +1,543 @@
+---
+title: "Analyzing the Ambient Air Pollution database"
+output: html_notebook
+---
+
+In this notebook we cover:
+
+* How you can see where R is looking for data files.
+* Revision on `subset` and logical vectors.
+* Analyzing an air pollution dataset
+
+## The working directory
+
+R has its own *working directory*.
+
+When you load files, R looks for files in or relative to this directory.
+
+We are going to load a file in the next section.
+
+In order for R to find the file, the file needs to be in the *working
+directory*.
+
+See R's working directory with the `getwd` function (GET Working
+Directory):
+
+```{r}
+getwd()
+```
+
+By default, when you load a notebook, RStudio sets the working directory
+to the same directory as your notebook.
+
+You can see a list of the files in the working directory with the
+function `list.files()`.  Confirm that you can see this notebook file in the output of `list.files()` below:
+
+```{r}
+list.files()
+```
+
+When you are using notebooks, you usually want the working directory to
+be the same as the directory containing the notebook, but sometimes this
+is not so.
+
+If you find that `getwd()` above does not give the same directory as the
+one containing your notebook, you can fix this.  Go to the RStudio
+*Session* menu, choose *Set Working Directory* and then *To Source File
+Location*.  Check your working directory with `getwd()`.
+
+**Try that now**.  Set the working directory the source file location as
+above.  Then run the `getwd()` chunk again, to confirm that it is still
+the same --- because RStudio usually sets the working directory to be
+the same as your notebook directory when it starts.  Run `list.files()`
+again to confirm that you can still see the notebook file name in the
+output.
+
+## On subset and logical vectors
+
+Let's go back to a tiny dataset:
+
+```{r}
+# Run thus chunk.
+tiny_census <- read.csv('census_snippet.csv')
+tiny_census
+```
+
+This dataset has only 10 rows and 3 columns:
+
+```{r}
+# Run this chunk.
+dim(tiny_census)
+```
+
+Now let us say we want to take a *subset* of these rows.  We can use the `subset` function to do that.
+
+Go over to the bottom left pane in RStudio, and select the Help tab.  Click inside the search entry box (with the magnifying glass).  Type "subset" (without the quotes) and press Return to see the help for the `subset` function.
+
+You should see that `subset` takes two arguments, which are called `x` and `subset`.  The help text for these arguments is:
+
+```
+       x: object to be subsetted.
+
+  subset: logical expression indicating elements or rows to keep:
+          missing values are taken as false.
+```
+
+This tells us that the first argument for the `subset` function is something we are going to take a subset from.  The second argument is a "logical expression" that tells subset which rows to keep.
+
+Here is a logical vector that has TRUE for rows where the `Sex` column of
+`tiny_census` has 2 (for female respondents) and FALSE otherwise.
+
+```{r}
+is_female <- tiny_census$Sex == 2
+is_female
+```
+
+`is_female` is a *logical vector*.  This is just a sequence of TRUE or FALSE values.  This is the kind of "logical expression" that we can use as the second argument to `subset`, like this:
+
+```{r}
+female_rows <- subset(tiny_census, is_female)
+female_rows
+```
+
+Notice that this is a new data frame for which `subset` has thrown away all the
+rows in the original data frame (`tiny_census`) that had a matching FALSE in
+`is_female`.
+
+We can even type in this *logical vector* ourselves.  Here I type in a vector that selects every other row:
+
+```{r}
+every_other <- c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE)
+every_other
+```
+
+Notice the `c` function to Combine all the TRUE, FALSE values into one sequence
+(or *vector*).
+
+I use it with `subset` to select every other row in `tiny_census`:
+
+```{r}
+every_other_row <- subset(tiny_census, every_other)
+every_other_row
+```
+
+Just for practice, make a logical vector, with 10 elements, like the one above, that has TRUE every *third* element, and FALSE otherwise.
+
+```{r}
+#- logical vector where every third element is TRUE
+every_third <- c(...)
+# Show the vector
+every_third
+```
+
+Now use this to select every third row from `tiny_census`
+
+```{r}
+every_third_row <- ...
+# Show the result.
+every_third_row
+```
+
+## Air pollution dataset
+
+You are analyzing a version of the [WHO Global Urban Ambient Air Pollution
+Database](https://www.who.int/phe/health_topics/outdoorair/databases/cities/en).
+Each row represents mean annual measures of air particulates for a single city
+or town. Call this the AAP database.
+
+The data in the CSV file below is a slightly cleaned up version of the [Excel
+spreadsheet
+original](https://www.who.int/phe/health_topics/outdoorair/databases/who-aap-database-may2016.xlsx).
+
+If you are interested, the notebook that did the work is available at
+<https://github.com/matthew-brett/r-teaching/blob/master/air_quality/process_aap_air_quality.pdf>.
+
+First load the AAP database from a file on your computer.
+
+```{r}
+# Load the data from a file on your computer.
+aap <- read.csv('aap_air_quality_database_2018_v14.csv')
+# Show the first six rows.
+head(aap)
+```
+
+If the chunk above does not work:
+
+* Check you have the file `aap_air_quality_database_2018_v14.csv` in the same
+  directory as this notebook.
+* Check that you have set the R's *working directory* to be the same as the
+  directory containing the notebook and data file.  Do this by opening this
+  notebook, going to the R Studio "Session" menu, choosing "Set Working
+  Directory" and then "To Source File Location".
+
+See above for how to find R's working directory.
+
+Show the *structure* of the `aap` data frame using the `str` function:
+
+```{r}
+#- Show the structure of the "aap" data frame with the "str" function
+...
+```
+
+Show the column names using the `names` function:
+
+```{r}
+#- Show the column names of "aap" with the "names" function
+...
+```
+
+The last few columns in the data frame are not much use.  In the next chunk,
+you keep only the first 12 columns, so the last column becomes
+`note.on.converted.PM2.5`.
+
+```{r}
+# Run this chunk.
+# Drop all columns after the 12th.
+aap <- aap[,1:12]
+# Show the names of the new version of the data frame.
+names(aap)
+```
+
+We are interested in the measures of [particulate
+matter](https://en.wikipedia.org/wiki/Particulates).
+
+This database has measures of mean annual concentration of:
+
+* PM 10 (particulates between 2.5 and 10 micrometers in diameter).
+* PM 2.5 (particulates less than 2.5 micrometers in diameter).
+
+These are in columns `pm10_yr_mean` and `pm25_yr_mean` respectively.
+
+You will also notice that the database has measures for many cities in the
+world, over multiple years.
+
+You can see which years the database has data for, by using the `table`
+function on the `Year` column of the `aap` data frame.  Notice the capital `Y`
+at the beginning of `Year`; R cares about upper and lower case.
+
+```{r}
+#- Use the "table" function on the "Year" column of the data frame
+#- to show a table of the values in "Year" and their respective counts.
+...
+```
+
+The table should reveal that there are nearly 3000 rows that have a value of
+`2016` for `Year`, and about the same number have `2015` and `2014`.  Previous
+years have fewer corresponding rows.
+
+It will be confusing if we allow multiple values for the PM10 and PM2.5
+concentrations for each city, across years.  For the rest of this notebook, we
+restrict our attention to the measurements for the year 2016.
+
+```{r}
+#- Use the "subset" function to make a new data frame called "aap_2016" that
+#- contains only the measurements with a value 2016 for "Year".
+#- Hint: the values in "Year" are numbers not strings.
+aap_2016 <- ...
+# Display the first six rows of the new "aap_2016" data frame.
+head(aap_2016)
+```
+
+You should see that your first six rows above all have the value `2016` for
+`Year`.
+
+We start by looking at the overall distribution of the 2016 PM10 and PM2.5
+measurements.
+
+First the PM10 measurements:
+
+```{r}
+#- Plot a histogram of the "pm10_yr_mean" column of "aap_2016"
+...
+```
+
+Next the PM2.5 measurements:
+
+```{r}
+#- Plot a histogram of the "pm25_yr_mean" column of "aap_2016"
+...
+```
+
+We predict that there will be a strong positive relationship between the measurements; cities with high measures for PM10 probably also have high measures for PM2.5.
+
+To investigate, do a plot of the PM10 measures on the x axis against the PM2.5 measures on the y axis:
+
+```{r}
+#- Do a plot of the "pm10_yr_mean" column of "aap_2016" on the x axis against
+#- the "pm25_yr_mean" column on the y axis.
+...
+```
+
+Your plot should confirm the strong positive relationship.
+
+We can use the data to give a more detailed picture of how the particulate
+concentrations vary by continent, and by income.
+
+For example, the database has a column `income_category` that classifies the
+country of the database row by income level, where `"HIC"` means "High Income
+Country" and `"LMIC"` means "low or lower middle income country".  The `Region`
+column gives the geographical region, such as `"Africa (Sub-Saharan)"` or
+`"Americas"`.
+
+Use the `table` function to show a two-way table where the rows are the unique
+regions in the `Region` column, the columns are the unique values for the
+`income_category` column, and the table contains the counts for each
+combination of `Region` and `income_category`:
+
+```{r}
+#- Use the "table" function on the "aap_2016" data frame, to show a two way
+#- table of counts, where the rows correspond to the unique values in the
+#- "Region" column and the columns correspond to the unique values in the
+#- "income_category" column.
+...
+```
+
+We predict that low and middle income countries will tend to have higher
+pollution, as measures to control pollution are relatively expensive.
+
+To check this prediction do a box plot of the values in the `pm10_yr_mean`
+column *as a function of* the values in `income_category`.  Hint: remember you
+write *as a function of* with the `~` (tilde) character.
+
+```{r}
+#- Show a box plot of "pm10_yr_mean" as a function of "income_category"
+#- from the "aap_2016" data frame.
+boxplot(...)
+```
+
+The plot is relatively interesting.  Low to middle income countries do have
+higher levels of PM10, on average, but some high-income countries have very
+high levels.  Let's investigate.
+
+First make a new data frame from the `aap_2016` that only contains countries with `"HIC"` in the `income_category` column:
+
+```{r}
+#- Use the "subset" function to make a new data frame "aap_2016_hic" that
+#- contains the rows from "aap_2016" with a value of "HIC" in
+#- "income_category".
+aap_2016_hic <- ...
+# Show the first six rows of "aap_2016_hic"
+head(aap_2016_hic)
+```
+
+Now use `subset` again to show all the rows of `aap_2016_hic` that have
+a `pm10_yr_mean` value of greater than 150.
+
+```{r}
+#- Use "subset" on "aap_2016_hic" to show the rows with a "pm10_yr_mean"
+#- value greater than 150.
+...
+```
+
+You should find that these high-income polluters are all from oil-rich
+countries.
+
+We can investigate further by looking at the distribution of the `pm10_yr_mean`
+values for the high-income countries, as a function of `Region`.
+
+To see the `Region` labels on the x-axis of the plot, add `las=2` as an extra
+argument to your boxplot, as in:
+
+```
+boxplot(one_thing ~ another_thing, las=2)
+```
+
+`las=2` causes R to write the x-axis labels vertically, so you can see longer
+labels more easily.
+
+```{r}
+#- Do a boxplot of the "pm10_yr_mean" values from the "aap_2016_hic"
+#- data frame, as a function of the values in the "Region" column.
+#- Use "las=2" as the final argument to "boxplot".
+...
+```
+
+This should reveal that high-income countries in the `Eastern Mediterranean`
+region have high PM10 levels, on average.
+
+You can see the countries in the `Eastern Mediterranean` region, with:
+
+```{r}
+# Run this chunk.
+# Select only the Eastern Mediterranean rows.
+medit <- subset(aap_2016_hic, aap_2016_hic$Region == "Eastern Mediterranean")
+# We need to drop factor levels for countries no longer present 
+# in the data frame.
+medit <- droplevels(medit)
+# The countries that _are_ present in the "medit" data frame.
+levels(medit$Country)
+```
+
+This should confirm that the high-income countries in the "Eastern
+Mediterranean" are well-known oil producers.
+
+Next we consider whether there might be a difference in the quality of the
+particulate measures between countries.
+
+The database has columns that give the *temporal coverage* of the measurements
+that went into the `pm10_yr_mean` and `pm25_yr_mean`.  This is the proportion
+of the year for which measurements are available.  We speculate that countries
+with less resources for these measurements may have lower temporal coverage.
+
+The temporal coverage for `pm10_yr_mean` is in `pm10_temp_cover`.  Over the
+next few chunks you will build up to using `table` to cross-tabulate
+`income_category` (in the rows) with `pm10_temp_cover` (in the columns), for
+the `aap_2016` data frame.
+
+First use `levels` to show the possible values for `pm10_temp_cover`:
+
+```{r}
+#- Use "levels" to show the possible values for "pm10_temp_cover" in the
+#- "aap_2016" data frame.
+...
+```
+
+You will see that one label is `"50% -< 75%"`.  This is a bit ugly.  Use the
+`levels` command again to change the factor labels from `">75%"` and `"50% -<
+75%"` (their current values) to `">75%"` and `"50-75%"`.  Show the new levels. 
+
+```{r}
+#- Change the level labels for "pm10_temp_cover" to ">75%" and "50-75%"
+#- in the "aap_2016" data frame.
+...
+# Show the new levels
+levels(aap_2016$pm10_temp_cover)
+```
+
+```{r}
+#- Make a table showing the values and the associated counts for
+#- the "pm10_temp_cover" column of "aap_2016"
+...
+```
+
+Here is the number of rows for `aap_2016`:
+
+```{r}
+dim(aap_2016)[1]
+```
+
+By the way, you can also get the number of rows with the `nrow` function, like
+this:
+
+```{r}
+nrow(aap_2016)
+```
+
+You can see that the counts from `table` do not add up to the total number of
+rows.   This is because there are many `NA` values. `NA` is a marker for
+a missing value.  In this case, it means there was no good data for the
+corresponding city or town.  Investigate the help for `table` to find an
+argument to `table` that will include `NA` as a category.   Then make the new
+table, that shows counts for all three of `">75%"` and `"50-75%"` and `NA`, for
+the `pm10_temp_cover` column of `aap_2016`.
+
+```{r}
+#- Make a table showing the values and the associated counts for
+#- the "pm10_temp_cover" column of "aap_2016", this time including the NA
+#- values as a category.
+...
+```
+
+The `NA` values may well be significant.  Maybe `NA` is more likely for cities
+and countries that have fewer resources for measuring particulates.  For
+example, notice there is no category for less than 50% temporal coverage.
+Perhaps >50% always appears as an `NA`.
+
+To investigate, do a new two-way table, similar to the one-way table above,
+that shows the counts for categories `">75%"` and `"50-75%"` and `NA`, broken
+down by the `income_category`.
+
+```{r}
+#- Make a new table called "icat_by_coverage", that is the cross-tabulation
+#- of "income_category" and "pm10_temp_cover", from the "aap_2016" data frame.
+#- Include NA values as a category.
+icat_by_coverage <- ...
+# Show the "icat_by_coverage" table.
+icat_by_coverage
+```
+
+Show a mosaic plot of the `icat_by_coverage` table.
+
+```{r}
+#- Make a mosaicplot of the "icat_by_coverage" table
+...
+```
+
+You may conclude that there is some evidence that low-middle income countries
+have less comprehensive measures of particulates.
+
+Finally, we return to the relationship between `pm25_yr_mean` and
+`pm10_yr_mean`.  It looked like there was a strong linear relationship.  We
+want to investigate which cities or countries have particularly low or high
+PM10 values, even allowing for their PM2.5 values.
+
+To do this, first calculate the PM10 / PM2.5 ratio, by making a new vector that
+is the `pm10_yr_mean` values divided by the `pm25_yr_mean` values.  Store this
+vector as `pm10_25_ratio`.
+
+```{r}
+#- Make a new vector "pm10_25_ratio" by dividing the "pm10_yr_mean" values
+#- of "aap_2016" by the corresponding "pm25_yr_mean" values.
+pm10_25_ratio <- ...
+# Show the first six values.
+head(pm10_25_ratio)
+```
+
+```{r}
+#- Show a histogram of the "pm10_25_ratio" values.
+```
+
+We would like to show the rows containing extreme outlier values for this
+ratio.  One way of doing this is to find the values that are more than - say
+- 6 standard deviations from the mean.
+
+You can use the `sd` function to return the standard deviation of values in
+a vector, like this:
+
+```{r}
+sd(pm10_25_ratio)
+```
+
+To find the outliers, we convert `pm10_25_ratio` to a [standard
+score](https://en.wikipedia.org/wiki/Standard_score).  The standard score
+corresponding to each value in `pm10_25_ratio` is the number of standard
+deviations of this value from the mean.
+
+To calculate the standard score, make a new vector `std_pm10_25_ratio` where
+you have first subtracted the mean of `pm10_25_ratio`, then divided by the
+standard deviation of `pm10_25_ratio`. Hint: be careful, you may need
+parentheses to make sure the calculation is in the right order.
+
+```{r}
+#- Calculate the standard scores for "pm10_25_ratio" and store in a new
+#- variable "std_pm10_25_ratio".
+std_pm10_25_ratio <- ...
+# Show the standard deviation of "std_pm10_25_ratio" (it should be very
+# close to 1).
+sd(std_pm10_25_ratio)
+```
+
+Show the extreme outlier rows from `aap_2016`, by showing the rows where
+`std_pm10_25_ratio` is greater than 6.
+
+**Hint**: use `subset`.
+
+```{r}
+#- Show all the rows in "aap_2016" where the corresponding value in
+#- pm10_25_ratio is greater than 6 standard deviations from the mean.
+...
+```
+
+## The end
+
+That's it.  **You don't need to submit this notebook**.  But - for practice,
+please consider doing the submission checks that you will also do for your
+homework.  Specifically: make sure that all the chunks execute correctly.  To
+do that, go to the Run button at the top of the notebook, and click "Restart R
+and Clear Output".  Then go to the top of the notebook, and run each chunk in
+turn, to make sure that they run without error, and give you the output you
+expect.  *Remember, for your homework, we going to run an automated marking
+script over this file, so it has to execute correctly, for you to get the
+marks*.
+
+But **please don't submit this notebook, it's just for practice**.
